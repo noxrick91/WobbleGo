@@ -146,7 +146,7 @@ python -m pip install -e source/WobbleGo
 ### 使用 RSL-RL（推荐）⭐
 
 ```bash
-python scripts/rsl_rl/train.py --task=WobbleGo-Direct-v0
+python scripts/rsl_rl/train.py --task=WobbleGo-Direct-v0 --headless
 ```
 
 ### 使用 RL Games
@@ -175,7 +175,7 @@ python scripts/skrl/train.py --task=WobbleGo-Direct-v0
 
 ```bash
 # RSL-RL
-python scripts/rsl_rl/play.py --task=WobbleGo-Direct-v0
+python scripts/rsl_rl/play.py --task=WobbleGo-Direct-v0 --num_envs=64
 
 # RL Games
 python scripts/rl_games/play.py --task=WobbleGo-Direct-v0

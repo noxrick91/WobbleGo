@@ -82,7 +82,7 @@ import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
-import InvertedPendulum.tasks  # noqa: F401
+import WobbleGo.tasks  # noqa: F401
 
 
 @hydra_task_config(args_cli.task, args_cli.agent)
