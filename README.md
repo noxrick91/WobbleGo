@@ -14,6 +14,10 @@ WobbleGo 是一个基于 [Isaac Lab](https://isaac-sim.github.io/IsaacLab/) 的�
 
 **🏷️ 关键词：** isaaclab, 机器人, 强化学习, 倒立摆, 飞轮
 
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-7289da?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/geH9ed5Q3N)
+[![Forum](https://img.shields.io/badge/Discourse-Forum-FF3300?style=for-the-badge&logo=discourse&logoColor=white)](https://noxcaw.com/c/robot/9)
+[![Isaac Lab](https://img.shields.io/badge/Simulator-Isaac%20Lab-orange?style=for-the-badge)](https://isaac-sim.github.io/IsaacLab/)
+
 ---
 
 ## 🚀 OnShape 3D模型
