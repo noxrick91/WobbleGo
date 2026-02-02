@@ -18,6 +18,9 @@ WobbleGo 是一个基于 [Isaac Lab](https://isaac-sim.github.io/IsaacLab/) 的�
 [![Forum](https://img.shields.io/badge/Discourse-Forum-FF3300?style=for-the-badge&logo=discourse&logoColor=white)](https://noxcaw.com/c/robot/9)
 [![Isaac Lab](https://img.shields.io/badge/Simulator-Isaac%20Lab-orange?style=for-the-badge)](https://isaac-sim.github.io/IsaacLab/)
 
+
+[Screencast from 2026-02-02 18-28-36.webm](https://github.com/user-attachments/assets/f338d787-c501-449f-a4fb-301595f98dc4)
+
 ---
 
 ## 🚀 OnShape 3D模型
@@ -270,3 +273,4 @@ pre-commit run --all-files
 <p align="center">
   🌟 如果这个项目对你有帮助，欢迎 Star！🌟
 </p>
+
