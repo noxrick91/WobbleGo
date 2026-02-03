@@ -176,6 +176,7 @@ python scripts/skrl/train.py --task=WobbleGo-Direct-v0
 tensorboard --logdir logs
 ```
 
+<img width="1853" height="1053" alt="Screenshot from 2026-02-04 04-53-00" src="https://github.com/user-attachments/assets/8e54cb37-3a4d-4749-9dde-cdb9c94bae22" />
 
 ---
 
@@ -280,4 +281,5 @@ pre-commit run --all-files
 <p align="center">
   🌟 如果这个项目对你有帮助，欢迎 Star！🌟
 </p>
+
 
