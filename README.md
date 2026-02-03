@@ -170,6 +170,13 @@ python scripts/sb3/train.py --task=WobbleGo-Direct-v0
 python scripts/skrl/train.py --task=WobbleGo-Direct-v0
 ```
 
+### TensorBoard
+
+```bash
+tensorboard --logdir logs
+```
+
+
 ---
 
 ## 🎬 评估 / 运行
