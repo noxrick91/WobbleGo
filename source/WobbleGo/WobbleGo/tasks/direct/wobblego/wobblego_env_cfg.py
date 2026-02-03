@@ -13,7 +13,7 @@ from dataclasses import replace
 
 @configclass
 class DomainRandomizationCfg:
-    """域随机化配置（增强版 - 更大的变化范围）"""
+    """域随机化配置"""
     
     # 是否启用域随机化
     enable: bool = True
@@ -21,24 +21,24 @@ class DomainRandomizationCfg:
     # === 飞轮参数随机化 ===
     # 飞轮质量缩放范围 [min, max]（相对于原始质量的比例）
     # 增大范围以覆盖不同惯量场景（惯量 ∝ 质量）
-    flywheel_mass_scale: tuple[float, float] = (0.5, 2.8)  # 更大范围
+    flywheel_mass_scale: tuple[float, float] = (0.8, 1.2)
     # 飞轮惯量缩放范围（相对于原始惯量的比例）
-    flywheel_inertia_scale: tuple[float, float] = (0.5, 2.8)  # 更大范围
+    flywheel_inertia_scale: tuple[float, float] = (0.8, 1.2)
     
     # === 电机参数随机化 ===
     # 电机最大扭矩缩放范围（相对于 action_scale 的比例）
     # 真实电机最大力矩 ≈ 0.5 Nm，需要覆盖这个范围
-    motor_torque_scale: tuple[float, float] = (0.6, 1.5)  # 有效范围 0.24~0.50 Nm
+    motor_torque_scale: tuple[float, float] = (0.8, 1.2)
     # 电机速度限制缩放范围（相对于原始速度限制的比例）
-    motor_velocity_scale: tuple[float, float] = (0.6, 1.4)  # ±40%2.5
+    motor_velocity_scale: tuple[float, float] = (0.8, 1.2)
     # 电机阻尼随机化范围
     motor_damping_range: tuple[float, float] = (0.002, 0.025)
     
     # === 摆臂参数随机化 ===
     # 摆臂质量缩放范围（相对于原始质量的比例）
-    arm_mass_scale: tuple[float, float] = (0.5, 1.5)  # ±50%
+    arm_mass_scale: tuple[float, float] = (0.8, 1.5)  # ±50%
     # 摆臂惯量缩放范围（相对于原始惯量的比例）
-    arm_inertia_scale: tuple[float, float] = (0.5, 1.5)  # ±50%
+    arm_inertia_scale: tuple[float, float] = (0.8, 1.5)  # ±50%
     # 摆臂关节阻尼范围（模拟轴承摩擦+线缆阻力，增大范围）
     arm_damping_range: tuple[float, float] = (0.01, 0.05)  # 线缆会增加阻力
     
@@ -108,8 +108,6 @@ class WobbleGoEnvCfg(DirectRLEnvCfg):
     flywheel_dof_name = "motor_wheel_joint"  # 飞轮关节
 
     # 动作缩放（基础值，会被域随机化调整）
-    # 真实电机最大力矩 ≈ 0.5 Nm，设置基础值为 0.40 Nm
-    # 配合 motor_torque_scale (0.6, 1.25)，有效范围 = 0.24 ~ 0.50 Nm
     action_scale = 0.50  # 电机最大扭矩 [Nm]
     
     # 奖励系数

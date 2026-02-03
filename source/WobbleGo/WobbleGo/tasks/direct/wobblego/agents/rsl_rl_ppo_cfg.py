@@ -16,7 +16,7 @@ class PPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 32
     max_iterations = 500
     save_interval = 50
-    experiment_name = "flywheel_pendulum_direct"
+    experiment_name = "wobblego_direct"
     empirical_normalization = True
     
     policy = RslRlPpoActorCriticCfg(
