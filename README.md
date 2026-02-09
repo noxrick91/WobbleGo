@@ -208,6 +208,8 @@ python scripts/skrl/play.py --task=WobbleGo-Direct-v0
 
 ## 🔄 Sim-to-Real 部署
 
+https://github.com/user-attachments/assets/01ef0495-a40c-4023-95b0-ae9dd398a2c0
+
 本项目支持将仿真中训练的策略直接部署到真实飞轮倒立摆硬件上。
 
 ### 硬件需求
@@ -410,5 +412,6 @@ pre-commit run --all-files
 <p align="center">
   🌟 如果这个项目对你有帮助，欢迎 Star！🌟
 </p>
+
 
 
