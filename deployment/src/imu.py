@@ -52,6 +52,11 @@ class JY61PReader:
         # 角度零点偏移（校准后设置）
         self.angle_offset = 0.0
         
+        # 互补滤波器状态
+        self._comp_angle: Optional[float] = None  # 滤波后的角度
+        self._last_timestamp: Optional[float] = None
+        self._comp_alpha = 0.02  # 加速度计权重（越小越信任陀螺仪，动态时更准确）
+        
         # 用于统计实际采样率
         self._sample_count = 0
         self._last_rate_time = time.time()
@@ -151,16 +156,44 @@ class JY61PReader:
         return got_complete_data
     
     def get_pole_angle_rad(self) -> float:
-        """使用加速度计计算完整的摆杆角度 (-π 到 +π)
-        """
-        acc_x = self.data.acc_x
-        acc_y = self.data.acc_y
-        acc_z = self.data.acc_z
+        """使用互补滤波器计算摆杆角度 (-π 到 +π)
         
-        angle = math.atan2(acc_x, acc_y)
+        互补滤波器融合：
+        - 加速度计：低频准确（静态），但动态时被离心力/切向加速度污染
+        - 陀螺仪：高频准确（动态），但会漂移
+        
+        angle = (1-alpha) * (prev_angle + gyro*dt) + alpha * accel_angle
+        """
+        # 加速度计角度（仅在静态时准确）
+        acc_angle = math.atan2(self.data.acc_x, self.data.acc_y)
+        
+        # 陀螺仪角速度 (rad/s)
+        gyro_rad = self.get_pole_velocity_rad()
+        
+        now = self.data.timestamp if self.data.timestamp > 0 else time.time()
+        
+        if self._comp_angle is None or self._last_timestamp is None:
+            # 首次初始化，用加速度计角度
+            self._comp_angle = acc_angle
+            self._last_timestamp = now
+        else:
+            dt = now - self._last_timestamp
+            if dt <= 0 or dt > 0.1:  # 防止异常 dt
+                dt = 0.005  # 默认 200Hz
+            self._last_timestamp = now
+            
+            # 陀螺仪积分预测
+            gyro_prediction = self._comp_angle + gyro_rad * dt
+            
+            # 互补滤波：动态时主要信任陀螺仪，静态时缓慢校正到加速度计
+            # 对角度差做周期性处理
+            angle_diff = acc_angle - gyro_prediction
+            angle_diff = (angle_diff + math.pi) % (2 * math.pi) - math.pi
+            
+            self._comp_angle = gyro_prediction + self._comp_alpha * angle_diff
         
         # 应用零点偏移
-        angle = angle - self.angle_offset
+        angle = self._comp_angle - self.angle_offset
         
         # 归一化到 [-π, π]
         angle = (angle + math.pi) % (2 * math.pi) - math.pi
@@ -195,14 +228,17 @@ class JY61PReader:
         return obs
     
     def calibrate_zero(self, duration: float = 3.0):
-        """零点校准 - 在下垂位置执行"""
+        """零点校准 - 在下垂位置执行
+        
+        校准时摆杆静止，加速度计角度可靠，用于确定零点偏移。
+        """
         print(f"零点校准中，请保持摆杆下垂静止... ({duration}秒)")
         
         angles = []
         start = time.time()
         while time.time() - start < duration:
             if self.update():
-                # 临时不用偏移计算角度
+                # 校准时静止，加速度计角度可靠
                 acc_x = self.data.acc_x
                 acc_y = self.data.acc_y
                 raw_angle = math.atan2(acc_x, acc_y)
@@ -211,6 +247,9 @@ class JY61PReader:
         
         if angles:
             self.angle_offset = sum(angles) / len(angles)
+            # 重置互补滤波器，以校准后的零点重新初始化
+            self._comp_angle = None
+            self._last_timestamp = None
             print(f"校准完成！零点偏移: {math.degrees(self.angle_offset):.2f}°, 采样数: {len(angles)}")
         else:
             print("校准失败：未收到数据")

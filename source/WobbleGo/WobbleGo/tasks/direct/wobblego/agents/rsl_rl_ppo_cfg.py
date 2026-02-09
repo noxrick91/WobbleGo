@@ -11,7 +11,6 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, R
 @configclass
 class PPORunnerCfg(RslRlOnPolicyRunnerCfg):
     """策略训练配置
-    结合域随机化和起摆
     """
     num_steps_per_env = 32
     max_iterations = 500

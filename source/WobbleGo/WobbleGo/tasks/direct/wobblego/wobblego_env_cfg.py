@@ -19,38 +19,29 @@ class DomainRandomizationCfg:
     enable: bool = True
     
     # === 飞轮参数随机化 ===
-    # 飞轮质量缩放范围 [min, max]（相对于原始质量的比例）
-    # 增大范围以覆盖不同惯量场景（惯量 ∝ 质量）
-    flywheel_mass_scale: tuple[float, float] = (0.8, 1.2)
-    # 飞轮惯量缩放范围（相对于原始惯量的比例）
-    flywheel_inertia_scale: tuple[float, float] = (0.8, 1.2)
+    # 飞轮质量缩放范围
+    flywheel_mass_scale: tuple[float, float] = (1.2, 2.0)
+    # 飞轮惯量缩放范围
+    flywheel_inertia_scale: tuple[float, float] = (1.2, 2.0)
     
     # === 电机参数随机化 ===
-    # 电机最大扭矩缩放范围（相对于 action_scale 的比例）
-    # 真实电机最大力矩 ≈ 0.5 Nm，需要覆盖这个范围
+    # 电机最大扭矩缩放范围
     motor_torque_scale: tuple[float, float] = (0.8, 1.2)
-    # 电机速度限制缩放范围（相对于原始速度限制的比例）
+    # 电机速度限制缩放范围
     motor_velocity_scale: tuple[float, float] = (0.8, 1.2)
     # 电机阻尼随机化范围
-    motor_damping_range: tuple[float, float] = (0.002, 0.025)
+    motor_damping_range: tuple[float, float] = (0.001, 0.002)
+    # 电机质量缩放范围
+    motor_mass_scale: tuple[float, float] = (0.8, 1.6)
     
     # === 摆臂参数随机化 ===
-    # 摆臂质量缩放范围（相对于原始质量的比例）
-    arm_mass_scale: tuple[float, float] = (0.8, 1.5)  # ±50%
-    # 摆臂惯量缩放范围（相对于原始惯量的比例）
-    arm_inertia_scale: tuple[float, float] = (0.8, 1.5)  # ±50%
-    # 摆臂关节阻尼范围（模拟轴承摩擦+线缆阻力，增大范围）
-    arm_damping_range: tuple[float, float] = (0.01, 0.05)  # 线缆会增加阻力
+    # 摆臂质量缩放范围
+    arm_mass_scale: tuple[float, float] = (0.8, 1.2)  # ±50%
+    # 摆臂惯量缩放范围
+    arm_inertia_scale: tuple[float, float] = (0.8, 1.2)  # ±50%
+    # 摆臂关节阻尼范围
+    arm_damping_range: tuple[float, float] = (0.001, 0.002)  
     
-    # === 外部扰动（模拟线缆干扰）===
-    # 是否启用外部扰动
-    enable_external_disturbance: bool = True
-    # 摆杆外部扰动力矩范围 [Nm]（模拟线缆拉扯）
-    arm_disturbance_torque: float = 0.02  # 随机扰动力矩幅值
-    # 扰动变化频率（每多少步更新一次扰动方向）
-    disturbance_change_interval: int = 10  # 每10步（约0.17秒@60Hz）可能改变扰动
-    # 扰动持续概率（扰动方向保持不变的概率）
-    disturbance_persistence: float = 0.9  # 90%概率保持当前扰动方向
     
     # === 观测噪声（增加噪声水平）===
     # 角度观测噪声标准差 [rad]
@@ -81,6 +72,17 @@ class SwingUpCfg:
     
     # 飞轮初始角速度范围 [rad/s]
     flywheel_initial_velocity: tuple[float, float] = (-5.0, 5.0)
+    
+    # === 从顶部附近开始的配置（大幅增加平衡训练样本）===
+    # 从顶部附近初始化的 episode 比例 (0.0~1.0)
+    # 0.3 = 30% 的 episode 从顶部附近开始，70% 从底部起摆
+    top_start_ratio: float = 0.3
+    # 顶部初始化时的角度偏移范围 [rad]（相对于 π）
+    top_angle_offset: tuple[float, float] = (-0.3, 0.3)
+    # 顶部初始化时的角速度范围 [rad/s]
+    top_velocity_range: tuple[float, float] = (-2.0, 2.0)
+    # 顶部初始化时的飞轮角速度范围 [rad/s]
+    top_flywheel_velocity: tuple[float, float] = (-10.0, 10.0)
 
 
 @configclass
@@ -89,13 +91,13 @@ class WobbleGoEnvCfg(DirectRLEnvCfg):
     
     # 环境基础配置
     decimation = 2
-    episode_length_s = 15.0  # 增加到15秒，给起摆更多时间
+    episode_length_s = 15.0
     action_space = 1  # 飞轮力矩
     observation_space = 4  # [cos(θ), sin(θ), 摆杆角速度, 飞轮角速度]
     state_space = 0
 
     # 仿真配置
-    sim: SimulationCfg = SimulationCfg(dt=1 / 300, render_interval=decimation)
+    sim: SimulationCfg = SimulationCfg(dt=1 / 200, render_interval=decimation)
 
     # 机器人配置
     robot_cfg: ArticulationCfg = replace(WOBBLEGO_CFG, prim_path="/World/envs/env_.*/Robot")
@@ -107,15 +109,20 @@ class WobbleGoEnvCfg(DirectRLEnvCfg):
     pendulum_dof_name = "base_arm_joint"  # 摆杆关节
     flywheel_dof_name = "motor_wheel_joint"  # 飞轮关节
 
-    # 动作缩放（基础值，会被域随机化调整）
-    action_scale = 0.50  # 电机最大扭矩 [Nm]
+    # 动作缩放
+    action_scale = 0.35  # 电机最大扭矩 [Nm]
     
     # 奖励系数
-    rew_scale_upright = 2.0  # 竖直奖励
-    rew_scale_velocity = -0.15  # 角速度惩罚（稍微减小，允许起摆时有更大速度）
-    rew_scale_effort = -0.003  # 能耗惩罚（减小，鼓励更积极的起摆）
-    rew_scale_swing_energy = 0.5  # 摆动能量奖励（鼓励能量积累）
-    rew_scale_progress = 1.0  # 进度奖励（鼓励向上摆）
+    rew_scale_upright = 2.5       # 竖直奖励
+    rew_scale_velocity = -0.25    # 摆杆角速度惩罚（接近顶部时）
+    rew_scale_effort = -0.003     # 能耗惩罚
+    rew_scale_swing_energy = 0.4  # 摆动能量奖励
+    rew_scale_progress = 0.8      # 进度奖励
+    rew_scale_stable = 3.0        # 稳定平衡奖励
+    rew_scale_action_rate = -0.05 # 动作变化率惩罚
+    rew_scale_flywheel_vel = -0.003   # 飞轮速度持续惩罚
+    rew_scale_flywheel_overspeed = -0.3  # 飞轮超速惩罚（线性惩罚的系数）
+    flywheel_speed_threshold = 50.0  # 飞轮速度惩罚阈值
     
     # 域随机化配置
     domain_randomization: DomainRandomizationCfg = DomainRandomizationCfg()
@@ -123,5 +130,5 @@ class WobbleGoEnvCfg(DirectRLEnvCfg):
     # 起摆配置
     swing_up: SwingUpCfg = SwingUpCfg()
     
-    # 旧的初始状态配置（保留兼容性，但优先使用 swing_up 配置）
-    initial_pole_angle_range = [-0.2, 0.2]  # 随机偏移 [rad]
+    # 观测延迟（模拟真实系统的 IMU 采样 + 通信 + 推理延迟）
+    observation_delay_steps: int = 2

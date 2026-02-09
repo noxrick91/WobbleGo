@@ -1,9 +1,9 @@
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg
-from isaaclab.actuators import ImplicitActuatorCfg, DCMotorCfg
+from isaaclab.actuators import ImplicitActuatorCfg
 
 
-USD_PATH = "https://data.noxcaw.com/downloads/wobble-go/usds/WobbleGo.usd"
+USD_PATH = "usds/WobbleGo.usd"
 
 WOBBLEGO_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
@@ -26,20 +26,18 @@ WOBBLEGO_CFG = ArticulationCfg(
     ),
     actuators={
         # 飞轮执行器
-        # K_T = 0.353 Nm/A，MAX_IQ = 1.5A 最大力矩 ≈ 0.53 Nm
-        "flywheel": DCMotorCfg(
+        "flywheel": ImplicitActuatorCfg(
             joint_names_expr=["motor_wheel_joint"],
-            effort_limit=0.53,        # 峰值力矩: 1.5A * 0.353 Nm/A
-            saturation_effort=0.53,   # 饱和力矩
-            velocity_limit=100.0,     # 20V下理论极限转速 (rad/s)
+            effort_limit=0.35,        # 最大力矩 [Nm]
+            velocity_limit=90.0,      # 物理极限转速
             stiffness=0.0,            # 力矩控制模式
-            damping=0.005,            # 小阻尼，惯量效应由飞轮质量/惯量本身体现
+            damping=0.001,            # 阻尼
         ),
         # 摆杆（被动关节）
         "pendulum": ImplicitActuatorCfg(
             joint_names_expr=["base_arm_joint"],
             stiffness=0.0,
-            damping=0.005,  # 小阻尼模拟轴承摩擦
+            damping=0.005,
         ),
     },
 )
