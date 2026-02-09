@@ -208,6 +208,8 @@ python scripts/skrl/play.py --task=WobbleGo-Direct-v0
 
 ## 🔄 Sim-to-Real Deployment
 
+https://github.com/user-attachments/assets/01ef0495-a40c-4023-95b0-ae9dd398a2c0
+
 This project supports deploying simulation-trained policies directly to real flywheel inverted pendulum hardware.
 
 ### Hardware Requirements
