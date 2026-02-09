@@ -1,3 +1,5 @@
+**[English](README_EN.md)** | **中文**
+
 # 🎯 WobbleGo
 
 ## 📖 项目简介
@@ -53,7 +55,11 @@ WobbleGo/
 │   ├── list_envs.py                 # 列出可用环境
 │   ├── zero_agent.py                # 零动作测试智能体
 │   └── random_agent.py              # 随机动作测试智能体
-└── 📂 deployment/                   # 真实硬件部署代码
+└── 📂 deployment/                   # Sim-to-Real 部署代码
+    ├── init.sh                      # CAN 总线初始化
+    ├── main.py                      # 部署主程序
+    └── 📂 src/
+        └── imu.py                   # JY61P IMU 驱动
 ```
 
 ---
@@ -197,6 +203,129 @@ python scripts/sb3/play.py --task=WobbleGo-Direct-v0
 # SKRL
 python scripts/skrl/play.py --task=WobbleGo-Direct-v0
 ```
+
+---
+
+## 🔄 Sim-to-Real 部署
+
+本项目支持将仿真中训练的策略直接部署到真实飞轮倒立摆硬件上。
+
+### 硬件需求
+
+| 组件 | 说明 |
+|------|------|
+| 🔧 无刷电机 | 带 CAN 总线接口的无刷电机（用于驱动飞轮） |
+| 📡 IMU 传感器 | JY61P 姿态传感器（串口通信，用于获取摆杆角度和角速度） |
+| 🖥️ 控制器 | 支持 CAN 总线和串口的 Linux 主机（如 Jetson、树莓派等） |
+| 🔌 CAN 适配器 | USB-to-CAN 或板载 CAN 接口 |
+
+### 部署目录结构
+
+```
+deployment/
+├── init.sh            # CAN 总线初始化脚本
+├── main.py            # 部署主程序
+└── src/
+    ├── __init__.py
+    └── imu.py         # JY61P IMU 驱动
+```
+
+### 关键参数
+
+| 参数 | 值 | 说明 |
+|------|----|------|
+| K_T | 0.235 | 电机力矩常数 (Nm/A) |
+| ACTION_SCALE | 0.35 | 动作缩放因子 |
+| CONTROL_FREQ | 100 Hz | 控制频率 |
+| MAX_IQ | 1.5 A | 最大电流限制 |
+| MAX_FLYWHEEL_SPEED | 100 rad/s | 飞轮安全转速阈值 |
+| FLYWHEEL_VEL_SCALE | 90.0 | 飞轮速度归一化系数 |
+
+### 部署步骤
+
+#### 1️⃣ 初始化 CAN 总线
+
+```bash
+cd deployment
+sudo bash init.sh
+```
+
+该脚本将配置 CAN0 接口（波特率 1Mbps，发送队列 1000）：
+
+```bash
+sudo ip link set can0 down
+sudo ip link set can0 txqueuelen 1000
+sudo ip link set can0 type can bitrate 1000000
+sudo ip link set can0 up
+```
+
+#### 2️⃣ 准备训练好的模型
+
+将仿真训练的模型文件（`.pt`）放到合适位置，并在 `main.py` 中修改模型路径：
+
+```python
+MODEL_PATH = "logs/rsl_rl/wobblego_direct/2026-02-09_22-14-15/model_300.pt"
+```
+
+#### 3️⃣ 配置硬件参数
+
+根据实际硬件连接，在 `main.py` 中修改以下参数：
+
+```python
+CAN_INTERFACE = "can0"         # CAN 接口名
+MOTOR_TX_ID = 0x200            # 电机发送 ID
+MOTOR_RX_ID = 0x100            # 电机接收 ID
+IMU_PORT = "/dev/ttyACM0"      # IMU 串口
+IMU_BAUDRATE = 115200           # IMU 波特率
+```
+
+#### 4️⃣ 运行部署程序
+
+```bash
+cd deployment
+python main.py
+```
+
+程序会按以下流程运行：
+
+1. **加载策略模型** — 自动解析网络结构并加载权重
+2. **初始化电机** — 通过 CAN 总线连接无刷电机
+3. **初始化 IMU** — 通过串口连接 JY61P 姿态传感器
+4. **IMU 校准** — 将摆杆放在下垂位置，按 Enter 进行零点校准
+5. **飞轮制动** — 自动将飞轮减速至停止
+6. **启动控制** — 按 Enter 启用 RL 策略控制
+
+### 安全机制
+
+- **飞轮超速保护**：当飞轮转速超过 100 rad/s 时自动停止控制
+- **电压饱和限速**：飞轮接近速度上限时限制同向力矩
+- **电流钳位**：输出电流限制在 ±1.5A 以内
+- **启动前制动**：自动在启动前将飞轮减速停止
+- **安全退出**：按 `Ctrl+C` 安全停止电机并断开 IMU
+
+### 观测空间映射
+
+部署代码与仿真环境使用相同的 4 维观测空间：
+
+| 索引 | 观测量 | 处理方式 |
+|------|--------|---------|
+| 0 | cos(θ) | IMU 直接获取 |
+| 1 | sin(θ) | IMU 获取，含方向补偿 |
+| 2 | 摆杆角速度 | IMU 获取，/10 归一化 |
+| 3 | 飞轮角速度 | 电机编码器获取，/90 归一化并裁剪到 [-1, 1] |
+
+### 方向校准
+
+如果机器人行为异常（如向错误方向发力），需要调整以下方向参数：
+
+```python
+TORQUE_DIRECTION = +1.0         # 力矩方向
+FLYWHEEL_VEL_DIRECTION = +1.0   # 飞轮速度读数方向
+POLE_ANGLE_DIRECTION = +1.0     # 摆杆角度方向
+POLE_VEL_DIRECTION = +1.0       # 摆杆角速度方向
+```
+
+> 💡 **提示**：部署时先观察 debug 输出中的观测值，确保与仿真中的方向一致，再通过调整方向参数进行修正。
 
 ---
 
