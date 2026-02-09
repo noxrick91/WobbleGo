@@ -249,7 +249,7 @@ def stop_flywheel(motor: cw.Motor, timeout: float = 5.0):
 
 
 if __name__ == "__main__":
-    MODEL_PATH = "logs/rsl_rl/wobblego_direct/2026-02-09_19-35-08/model_300.pt"
+    MODEL_PATH = "logs/rsl_rl/wobblego_direct/2026-02-09_22-14-15/model_300.pt"
     CAN_INTERFACE = "can0"
     MOTOR_TX_ID = 0x200
     MOTOR_RX_ID = 0x100

@@ -3,7 +3,7 @@ from isaaclab.assets import ArticulationCfg
 from isaaclab.actuators import ImplicitActuatorCfg
 
 
-USD_PATH = "usds/WobbleGo.usd"
+USD_PATH = "https://data.noxcaw.com/downloads/wobble-go/usds/WobbleGo.usd"
 
 WOBBLEGO_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
